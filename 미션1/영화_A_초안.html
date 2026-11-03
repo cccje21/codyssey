@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>디즈니 애니메이션 티어리스트</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+    background: linear-gradient(135deg, #fff5e1 0%, #ffd6d6 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #4a2c2c;
+  }
+
+  h1 {
+    text-align: center;
+    color: #c0392b;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+  }
+
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    background: rgba(255,255,255,0.6);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .toolbar input[type="text"] {
+    padding: 8px 12px;
+    border: 2px solid #f5b7a1;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 280px;
+    outline: none;
+  }
+
+  .toolbar input[type="text"]:focus { border-color: #e74c3c; }
+
+  .toolbar button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #f5b7a1;
+    color: #4a2c2c;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+  }
+
+  .toolbar button:hover { background: #e59866; }
+  .toolbar button.danger { background: #e74c3c; color: white; }
+  .toolbar button.danger:hover { background: #c0392b; }
+
+  .tier-container, .pool-section {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tier-row {
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+
+  .tier-label {
+    width: 80px;
+    min-width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  }
+
+  .tier-drop {
+    flex: 1;
+    min-height: 90px;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-content: flex-start;
+    background: rgba(255,255,255,0.7);
+  }
+
+  .tier-drop.drag-over,
+  .pool-drop.drag-over {
+    background: rgba(255,255,150,0.8);
+    outline: 2px dashed #e74c3c;
+  }
+
+  .tier-S .tier-label { background: #ff9999; }
+  .tier-A .tier-label { background: #ffc49b; }
+  .tier-B .tier-label { background: #ffe599; }
+  .tier-C .tier-label { background: #b6e2a1; }
+  .tier-D .tier-label { background: #a1c9f5; }
+
+  .pool-section {
+    margin-top: 25px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+
+  .pool-header {
+    background: #c9b1e0;
+    color: #4a2c4a;
+    padding: 10px 15px;
+    font-weight: bold;
+    font-size: 16px;
+  }
+
+  .pool-drop {
+    background: #e5d4f0;
+    min-height: 120px;
+    padding: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-content: flex-start;
+  }
+
+  .card {
+    background: white;
+    border: 2px solid #d5a6a6;
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: grab;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    user-select: none;
+    transition: transform 0.1s;
+  }
+
+  .card:hover { transform: translateY(-2px); }
+  .card.dragging { opacity: 0.4; cursor: grabbing; }
+
+  .delete-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .delete-btn:hover { background: #c0392b; }
+
+  .footer-note {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 12px;
+    color: #8a5a5a;
+  }
+</style>
+</head>
+<body>
+
+<h1>🎬 디즈니 애니메이션 티어리스트</h1>
+
+<div class="toolbar">
+  <input type="text" id="movieInput" placeholder="영화 제목 입력 후 Enter 또는 추가" />
+  <button onclick="addMovie()">➕ 추가</button>
+  <button onclick="exportJSON()">💾 내보내기(JSON)</button>
+  <button onclick="document.getElementById('importFile').click()">📂 불러오기(JSON)</button>
+  <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)" />
+  <button class="danger" onclick="resetAll()">🔄 전체 초기화</button>
+</div>
+
+<div class="tier-container">
+  <div class="tier-row tier-S">
+    <div class="tier-label">S</div>
+    <div class="tier-drop" data-tier="S"></div>
+  </div>
+  <div class="tier-row tier-A">
+    <div class="tier-label">A</div>
+    <div class="tier-drop" data-tier="A"></div>
+  </div>
+  <div class="tier-row tier-B">
+    <div class="tier-label">B</div>
+    <div class="tier-drop" data-tier="B"></div>
+  </div>
+  <div class="tier-row tier-C">
+    <div class="tier-label">C</div>
+    <div class="tier-drop" data-tier="C"></div>
+  </div>
+  <div class="tier-row tier-D">
+    <div class="tier-label">D</div>
+    <div class="tier-drop" data-tier="D"></div>
+  </div>
+</div>
+
+<div class="pool-section">
+  <div class="pool-header">📦 미분류 영화 풀 (여기에서 티어로 드래그하세요)</div>
+  <div class="pool-drop" data-tier="pool"></div>
+</div>
+
+<p class="footer-note">자동 저장됩니다. 친구에게 공유하려면 JSON 내보내기를 사용하세요.</p>
+
+<script>
+  const INITIAL_MOVIES = [
+    "백설공주와 일곱 난쟁이 (1937)", "피노키오 (1940)", "신데렐라 (1950)",
+    "이상한 나라의 앨리스 (1951)", "피터팬 (1953)", "101마리 달마시안 (1961)",
+    "정글북 (1967)", "인어공주 (1989)", "미녀와 야수 (1991)", "알라딘 (1992)",
+    "라이온 킹 (1994)", "포카혼타스 (1995)", "뮬란 (1998)", "릴로 & 스티치 (2002)",
+    "라푼젤 (2010)", "겨울왕국 (2013)", "모아나 (2016)", "주토피아 (2016)",
+    "엔칸토: 마법의 세계 (2021)", "위시 (2023)"
+  ];
+
+  const STORAGE_KEY = "disney_tierlist_v1";
+  const VALID_TIERS = ["S", "A", "B", "C", "D", "pool"];
+
+  let state = {};
+  let draggedTitle = null;
+
+  // ── 1. 초기화 및 저장 ──────────────────────────────────────────
+  function initDefault() {
+    state = {};
+    INITIAL_MOVIES.forEach(m => { state[m] = "pool"; });
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function loadState() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        state = {};
+        Object.keys(parsed).forEach(title => {
+          const tier = parsed[title];
+          state[title] = VALID_TIERS.includes(tier) ? tier : "pool";
+        });
+      } catch(e) {
+        initDefault();
+      }
+    } else {
+      initDefault();
+    }
+    render();
+  }
+
+  // ── 2. 렌더링 (화면 그리기) ──────────────────────────────────────────
+  function render() {
+    document.querySelectorAll(".tier-drop, .pool-drop").forEach(el => {
+      el.innerHTML = "";
+    });
+
+    Object.keys(state).forEach(title => {
+      const tier = state[title];
+      let zone = document.querySelector(`[data-tier="${tier}"]`);
+      if (!zone) {
+        state[title] = "pool";
+        zone = document.querySelector('[data-tier="pool"]');
+      }
+      zone.appendChild(createCard(title));
+    });
+
+    saveState();
+  }
+
+  // ── 3. 카드 생성 ────────────────────────────────────────
+  function createCard(title) {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.draggable = true;
+    card.dataset.title = title;
+
+    const span = document.createElement("span");
+    span.textContent = title;
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "delete-btn";
+    delBtn.textContent = "×";
+    delBtn.title = "삭제";
+    delBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (confirm(`"${title}"을(를) 삭제하시겠습니까?`)) {
+        delete state[title];
+        render();
+      }
+    });
+
+    card.appendChild(span);
+    card.appendChild(delBtn);
+
+    card.addEventListener("dragstart", (e) => {
+      draggedTitle = title;
+      card.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", title);
+    });
+
+    card.addEventListener("dragend", () => {
+      card.classList.remove("dragging");
+      draggedTitle = null;
+    });
+
+    return card;
+  }
+
+  // ── 4. 드롭존 이벤트 ────────────────────────────────────
+  function setupDropZones() {
+    document.querySelectorAll(".tier-drop, .pool-drop").forEach(zone => {
+      zone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        zone.classList.add("drag-over");
+      });
+
+      zone.addEventListener("dragleave", (e) => {
+        if (!zone.contains(e.relatedTarget)) {
+          zone.classList.remove("drag-over");
+        }
+      });
+
+      zone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        zone.classList.remove("drag-over");
+        const title = e.dataTransfer.getData("text/plain") || draggedTitle;
+        if (!title) return;
+        const newTier = zone.dataset.tier;
+        if (state.hasOwnProperty(title)) {
+          state[title] = newTier;
+          render();
+        }
+      });
+    });
+  }
+
+  // ── 5. 영화 추가 (버그 수정됨!) ────────────────────────────────────────
+  function addMovie() {
+    const input = document.getElementById("movieInput");
+    const title = input.value.trim();
+
+    if (!title) {
+      alert("영화 제목을 입력해주세요.");
+      return;
+    }
+    if (state.hasOwnProperty(title)) {
+      alert(`"${title}"은(는) 이미 존재합니다.`);
+      input.value = "";
+      return;
+    }
+
+    // 끊겼던 코드 복구 및 완성
+    state[title] = "pool";
+    input.value = ""; // 입력창 비우기
+    render(); // 화면 다시 그리기
+  }
+
+  // ── 6. 누락되었던 추가 기능들 (내보내기, 불러오기, 초기화) ──────────────
+  
+  // JSON 내보내기
+  function exportJSON() {
+    const dataStr = JSON.stringify(state, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "disney_tierlist.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // JSON 불러오기
+  function importJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const importedState = JSON.parse(e.target.result);
+        state = importedState;
+        render();
+        alert("티어리스트를 성공적으로 불러왔습니다!");
+      } catch (error) {
+        alert("잘못된 파일 형식입니다.");
+      }
+      event.target.value = ""; // 같은 파일 다시 선택 가능하게 초기화
+    };
+    reader.readAsText(file);
+  }
+
+  // 전체 초기화
+  function resetAll() {
+    if (confirm("정말 모든 배치를 초기화하시겠습니까? (추가한 영화도 삭제됩니다)")) {
+      initDefault();
+      render();
+    }
+  }
+
+  // ── 7. 앱 시작 (버그 수정됨!) ────────────────────────────────────────
+  // 브라우저가 켜지면 엔터키 이벤트와 초기 화면 세팅을 실행합니다.
+  window.onload = function() {
+    // 엔터키로 영화 추가 가능하게 설정
+    document.getElementById("movieInput").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") addMovie();
+    });
+    
+    // 드래그 앤 드롭 준비 및 저장된 데이터 불러오기
+    setupDropZones();
+    loadState();
+  };
+</script>

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>디즈니 애니메이션 티어리스트</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #fff4b8, #ffd6d6);
+      color: #333;
+    }
+
+    header {
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(6px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.7);
+    }
+
+    h1 {
+      margin: 0 0 15px;
+      text-align: center;
+      color: #5a3a3a;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"] {
+      width: 320px;
+      padding: 10px 12px;
+      border: 2px solid #e6b3b3;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    button {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      background: #ffffff;
+      color: #5a3a3a;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    }
+
+    button:hover {
+      background: #fff2f2;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 25px auto;
+      padding: 0 20px 30px;
+    }
+
+    .tier {
+      display: flex;
+      min-height: 110px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 3px solid rgba(255, 255, 255, 0.8);
+    }
+
+    .tier-label {
+      width: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: bold;
+      color: #4b2d2d;
+      border-right: 3px solid rgba(255, 255, 255, 0.8);
+    }
+
+    .tier-content,
+    .pool-content {
+      flex: 1;
+      padding: 12px;
+      display: flex;
+      align-content: flex-start;
+      flex-wrap: wrap;
+      gap: 10px;
+      min-height: 100px;
+    }
+
+    .s-tier {
+      background: #ffb3b3;
+    }
+
+    .a-tier {
+      background: #ffd1a6;
+    }
+
+    .b-tier {
+      background: #fff2a8;
+    }
+
+    .c-tier {
+      background: #c8f7c5;
+    }
+
+    .d-tier {
+      background: #b8d8ff;
+    }
+
+    .pool {
+      margin-top: 25px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #d8c4ff;
+      border: 3px solid rgba(255, 255, 255, 0.8);
+    }
+
+    .pool-title {
+      padding: 14px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #4b2d5a;
+      border-bottom: 3px solid rgba(255, 255, 255, 0.8);
+    }
+
+    .card {
+      position: relative;
+      padding: 10px 34px 10px 12px;
+      background: #ffffff;
+      border-radius: 10px;
+      cursor: grab;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+      user-select: none;
+      max-width: 260px;
+      word-break: keep-all;
+    }
+
+    .card:active {
+      cursor: grabbing;
+    }
+
+    .delete-btn {
+      position: absolute;
+      top: 5px;
+      right: 7px;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+      color: #cc5555;
+      padding: 0;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .delete-btn:hover {
+      background: transparent;
+      color: #ff0000;
+    }
+
+    .drag-over {
+      outline: 4px dashed rgba(80, 80, 80, 0.45);
+      outline-offset: -8px;
+    }
+
+    .notice {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #6b4a4a;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>디즈니 애니메이션 티어리스트</h1>
+
+    <div class="controls">
+      <input
+        id="movieInput"
+        type="text"
+        placeholder="영화 제목을 입력하세요"
+      />
+      <button id="addBtn">영화 추가</button>
+      <button id="exportBtn">JSON 내보내기</button>
+      <button id="importBtn">JSON 불러오기</button>
+      <button id="resetBtn">전체 초기화</button>
+      <input id="fileInput" type="file" accept=".json,application/json" />
+    </div>
+
+    <div class="notice">
+      카드를 드래그해서 S/A/B/C/D 티어 또는 하단 풀로 이동할 수 있습니다.
+    </div>
+  </header>
+
+  <main>
+    <section class="tier s-tier" data-zone="S">
+      <div class="tier-label">S</div>
+      <div class="tier-content drop-zone" data-zone="S"></div>
+    </section>
+
+    <section class="tier a-tier" data-zone="A">
+      <div class="tier-label">A</div>
+      <div class="tier-content drop-zone" data-zone="A"></div>
+    </section>
+
+    <section class="tier b-tier" data-zone="B">
+      <div class="tier-label">B</div>
+      <div class="tier-content drop-zone" data-zone="B"></div>
+    </section>
+
+    <section class="tier c-tier" data-zone="C">
+      <div class="tier-label">C</div>
+      <div class="tier-content drop-zone" data-zone="C"></div>
+    </section>
+
+    <section class="tier d-tier" data-zone="D">
+      <div class="tier-label">D</div>
+      <div class="tier-content drop-zone" data-zone="D"></div>
+    </section>
+
+    <section class="pool">
+      <div class="pool-title">미분류 영화 풀</div>
+      <div class="pool-content drop-zone" data-zone="pool"></div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "disney-tier-list-state";
+
+    const initialMovies = [
+      "백설공주와 일곱 난쟁이 (1937)",
+      "피노키오 (1940)",
+      "신데렐라 (1950)",
+      "이상한 나라의 앨리스 (1951)",
+      "피터팬 (1953)",
+      "101마리 달마시안 (1961)",
+      "정글북 (1967)",
+      "인어공주 (1989)",
+      "미녀와 야수 (1991)",
+      "알라딘 (1992)",
+      "라이온 킹 (1994)",
+      "포카혼타스 (1995)",
+      "뮬란 (1998)",
+      "릴로 & 스티치 (2002)",
+      "라푼젤 (2010)",
+      "겨울왕국 (2013)",
+      "모아나 (2016)",
+      "주토피아 (2016)",
+      "엔칸토: 마법의 세계 (2021)",
+      "위시 (2023)"
+    ];
+
+    let state = createInitialState();
+
+    function createInitialState() {
+      return {
+        S: [],
+        A: [],
+        B: [],
+        C: [],
+        D: [],
+        pool: [...initialMovies]
+      };
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+
+      if (!saved) {
+        state = createInitialState();
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(saved);
+
+        state = {
+          S: Array.isArray(parsed.S) ? parsed.S : [],
+          A: Array.isArray(parsed.A) ? parsed.A : [],
+          B: Array.isArray(parsed.B) ? parsed.B : [],
+          C: Array.isArray(parsed.C) ? parsed.C : [],
+          D: Array.isArray(parsed.D) ? parsed.D : [],
+          pool: Array.isArray(parsed.pool) ? parsed.pool : []
+        };
+      } catch {
+        state = createInitialState();
+      }
+    }
+
+    function render() {
+      const zones = ["S", "A", "B", "C", "D", "pool"];
+
+      zones.forEach(zone => {
+        const container = document.querySelector(`.drop-zone[data-zone="${zone}"]`);
+        container.innerHTML = "";
+
+        state[zone].forEach(title => {
+          const card = createCard(title);
+          container.appendChild(card);
+        });
+      });
+    }
+
+    function createCard(title) {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.draggable = true;
+      card.dataset.title = title;
+      card.textContent = title;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "delete-btn";
+      deleteBtn.textContent = "×";
+      deleteBtn.title = "삭제";
+
+      deleteBtn.addEventListener("click", event => {
+        event.stopPropagation();
+        deleteMovie(title);
+      });
+
+      card.appendChild(deleteBtn);
+
+      card.addEventListener("dragstart", event => {
+        event.dataTransfer.setData("text/plain", title);
+        event.dataTransfer.effectAllowed = "move";
+      });
+
+      return card;
+    }
+
+    function getAllMovies() {
+      return [
+        ...state.S,
+        ...state.A,
+        ...state.B,
+        ...state.C,
+        ...state.D,
+        ...state.pool
+      ];
+    }
+
+    function normalizeTitle(title) {
+      return title.trim().replace(/\s+/g, " ").toLowerCase();
+    }
+
+    function movieExists(title) {
+      const target = normalizeTitle(title);
+      return getAllMovies().some(movie => normalizeTitle(movie) === target);
+    }
+
+    function addMovie() {
+      const input = document.getElementById("movieInput");
+      const title = input.value.trim();
+
+      if (!title) {
+        alert("영화 제목을 입력해주세요.");
+        return;
+      }
+
+      if (movieExists(title)) {
+        alert("이미 존재하는 영화입니다.");
+        return;
+      }
+
+      state.pool.push(title);
+      input.value = "";
+      saveState();
+      render();
+    }
+
+    function deleteMovie(title) {
+      const confirmed = confirm(`"${title}" 카드를 삭제할까요?`);
+
+      if (!confirmed) return;
+
+      for (const zone of ["S", "A", "B", "C", "D", "pool"]) {
+        state[zone] = state[zone].filter(movie => movie !== title);
+      }
+
+      saveState();
+      render();
+    }
+
+    function moveMovie(title, targetZone) {
+      for (const zone of ["S", "A", "B", "C", "D", "pool"]) {
+        state[zone] = state[zone].filter(movie => movie !== title);
+      }
+
+      state[targetZone].push(title);
+      saveState();
+      render();
+    }
+
+    function resetAll() {
+      const confirmed = confirm("모든 배치와 추가 영화를 초기 상태로 되돌릴까요?");
+
+      if (!confirmed) return;
+
+      state = createInitialState();
+      saveState();
+      render();
+    }
+
+    function exportJson() {
+      const data = JSON.stringify(state, null, 2);
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "disney-tier-list.json";
+      a.click();
+
+      URL.revokeObjectURL(url);
+    }
+
+    function importJsonFile(file) {
+      const reader = new FileReader();
+
+      reader.onload = event => {
+        try {
+          const imported = JSON.parse(event.target.result);
+
+          const newState = {
+            S: Array.isArray(imported.S) ? imported.S : [],
+            A: Array.isArray(imported.A) ? imported.A : [],
+            B: Array.isArray(imported.B) ? imported.B : [],
+            C: Array.isArray(imported.C) ? imported.C : [],
+            D: Array.isArray(imported.D) ? imported.D : [],
+            pool: Array.isArray(imported.pool) ? imported.pool : []
+          };
+
+          state = removeDuplicatesFromState(newState);
+          saveState();
+          render();
+
+          alert("JSON 파일을 불러왔습니다.");
+        } catch {
+          alert("올바른 JSON 파일이 아닙니다.");
+        }
+      };
+
+      reader.readAsText(file);
+    }
+
+    function removeDuplicatesFromState(targetState) {
+      const result = {
+        S: [],
+        A: [],
+        B: [],
+        C: [],
+        D: [],
+        pool: []
+      };
+
+      const seen = new Set();
+
+      for (const zone of ["S", "A", "B", "C", "D", "pool"]) {
+        targetState[zone].forEach(title => {
+          if (typeof title !== "string") return;
+
+          const trimmed = title.trim();
+          if (!trimmed) return;
+
+          const key = normalizeTitle(trimmed);
+
+          if (!seen.has(key)) {
+            seen.add(key);
+            result[zone].push(trimmed);
+          }
+        });
+      }
+
+      return result;
+    }
+
+    document.querySelectorAll(".drop-zone").forEach(zone => {
+      zone.addEventListener("dragover", event => {
+        event.preventDefault();
+        zone.classList.add("drag-over");
+      });
+
+      zone.addEventListener("dragleave", () => {
+        zone.classList.remove("drag-over");
+      });
+
+      zone.addEventListener("drop", event => {
+        event.preventDefault();
+
+        const title = event.dataTransfer.getData("text/plain");
+        const targetZone = zone.dataset.zone;
+
+        zone.classList.remove("drag-over");
+
+        if (title && targetZone) {
+          moveMovie(title, targetZone);
+        }
+      });
+    });
+
+    document.getElementById("addBtn").addEventListener("click", addMovie);
+
+    document.getElementById("movieInput").addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        addMovie();
+      }
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", resetAll);
+
+    document.getElementById("exportBtn").addEventListener("click", exportJson);
+
+    document.getElementById("importBtn").addEventListener("click", () => {
+      document.getElementById("fileInput").click();
+    });
+
+    document.getElementById("fileInput").addEventListener("change", event => {
+      const file = event.target.files[0];
+
+      if (file) {
+        importJsonFile(file);
+      }
+
+      event.target.value = "";
+    });
+
+    loadState();
+    render();
+  </script>
+</body>
+</html>
